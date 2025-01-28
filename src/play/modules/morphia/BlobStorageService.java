@@ -1,6 +1,6 @@
 package play.modules.morphia;
 
-import org.osgl._;
+import org.osgl.Osgl;
 import org.osgl.exception.UnexpectedIOException;
 import org.osgl.storage.ISObject;
 import org.osgl.storage.IStorageService;
@@ -41,15 +41,15 @@ public class BlobStorageService extends StorageServiceBase implements IStorageSe
 
     private static class SJob<T> extends play.jobs.Job<T> {
 
-        _.Func0<T> func;
-        _.Func0<?> success;
-        _.Function<Throwable, Void> fail;
+        Osgl.Func0<T> func;
+        Osgl.Func0<?> success;
+        Osgl.Function<Throwable, Void> fail;
 
-        SJob(_.Func0<T> func) {
-            this(func, _.F0, _.F1);
+        SJob(Osgl.Func0<T> func) {
+            this(func, Osgl.F0, Osgl.F1);
         }
 
-        SJob(_.Func0<T> func, _.Func0<?> success, _.Function<Throwable, Void> fail) {
+        SJob(Osgl.Func0<T> func, Osgl.Func0<?> success, Osgl.Function<Throwable, Void> fail) {
             this.func = func;
             this.success = success;
             this.fail = fail;
@@ -96,7 +96,7 @@ public class BlobStorageService extends StorageServiceBase implements IStorageSe
         StringBuilder sb = new StringBuilder();
         String skgen = keygen.toString();
         sb.append(S.first(skgen, 1)).append(S.last(skgen, 1));
-        int hash = _.hc(storage, keygen);
+        int hash = Osgl.hc(storage, keygen);
         sb.append(Math.abs(hash)).append(S.first(storage, 1)).append(S.last(storage, 1));
         return sb.toString();
     }
@@ -112,13 +112,13 @@ public class BlobStorageService extends StorageServiceBase implements IStorageSe
         if (null == bss) {
             Class<? extends IStorageService> c = MorphiaPlugin.getStorageClass(storage);
             E.invalidArgIf(null == c, "cannot find storage implementation for %s", storage);
-            IStorageService ss = _.newInstance(c, keygen);
+            IStorageService ss = Osgl.newInstance(c, keygen);
             Map<String, String> ssConf = MorphiaPlugin.getStorageConfig(storage);
             ss.configure(ssConf);
             boolean migrateData = MorphiaPlugin.migrateData;
             bss = new BlobStorageService(migrateData, keygen, ss, ssKey);
             registry.put(bss.ssKey, bss);
-            bss.putAsync = Boolean.parseBoolean(_.ensureGet(ssConf.get("storage." + storage + ".put.async"), "false"));
+            bss.putAsync = Boolean.parseBoolean(Osgl.ensureGet(ssConf.get("storage." + storage + ".put.async"), "false"));
         }
         return bss;
     }
@@ -132,11 +132,11 @@ public class BlobStorageService extends StorageServiceBase implements IStorageSe
     }
 
     static void putLater(String key, ISObject sobj, IStorageService ss) {
-        putLater(key, sobj, ss, _.F0, _.F1);
+        putLater(key, sobj, ss, Osgl.F0, Osgl.F1);
     }
 
-    static void putLater(String key, ISObject sobj, IStorageService ss, _.Func0<Void> success,
-                         _.Func1<Throwable, Void> fail
+    static void putLater(String key, ISObject sobj, IStorageService ss, Osgl.Func0<Void> success,
+                         Osgl.Func1<Throwable, Void> fail
     ) {
         new SJob<Void>(IStorageService.f.put(key, sobj, ss), success, fail).now();
     }
@@ -159,13 +159,13 @@ public class BlobStorageService extends StorageServiceBase implements IStorageSe
             // try gfs first
             sobj = gs.get(key);
             if (null != sobj) {
-                putLater(key, sobj, ss, new _.F0<Void>() {
+                putLater(key, sobj, ss, new Osgl.F0<Void>() {
                     @Override
                     public Void apply() {
                         removeLater(key, gs, 60);
                         return null;
                     }
-                }, _.F1);
+                }, Osgl.F1);
             }
         }
         if (null == sobj) {
@@ -191,13 +191,13 @@ public class BlobStorageService extends StorageServiceBase implements IStorageSe
             // try gfs first
             sobj = gs.get(key);
             if (null != sobj) {
-                putLater(key, sobj, ss, new _.F0<Void>() {
+                putLater(key, sobj, ss, new Osgl.F0<Void>() {
                     @Override
                     public Void apply() {
                         removeLater(key, gs, 60);
                         return null;
                     }
-                }, _.F1);
+                }, Osgl.F1);
             }
         }
         if (null == sobj) {
@@ -213,7 +213,7 @@ public class BlobStorageService extends StorageServiceBase implements IStorageSe
     @Override
     public void put(final String key, final ISObject sobj) throws UnexpectedIOException {
         if (putAsync) {
-            putLater(key, sobj, ss, _.F0, new _.F1<Throwable, Void>() {
+            putLater(key, sobj, ss, Osgl.F0, new Osgl.F1<Throwable, Void>() {
                 @Override
                 public Void apply(Throwable e) {
                     Logger.warn(e, "error put storage object with key[%s]. persist into GridFS", key);
@@ -300,7 +300,7 @@ public class BlobStorageService extends StorageServiceBase implements IStorageSe
         }
     }
 
-    public void migrate(String key, _.Func1<Throwable, Void> fail) {
+    public void migrate(String key, Osgl.Func1<Throwable, Void> fail) {
         if (!migrateData) {
             return;
         }

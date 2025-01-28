@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.AbstractEntityInterceptor;
 import org.mongodb.morphia.Datastore;
@@ -25,7 +25,7 @@ import org.mongodb.morphia.mapping.Mapper;
 import org.mongodb.morphia.mapping.validation.ConstraintViolationException;
 import org.mongodb.morphia.query.Criteria;
 import org.mongodb.morphia.query.Query;
-import org.osgl._;
+import org.osgl.Osgl;
 import org.osgl.storage.IStorageService;
 import org.osgl.storage.KeyGenerator;
 import org.osgl.util.C;
@@ -461,7 +461,7 @@ public final class MorphiaPlugin extends PlayPlugin {
                 if (null == ssCls) {
                     E.invalidConfiguration("cannot find serviceImpl for morphia storage: %s", s);
                 }
-                Class<? extends IStorageService> cls = _.classForName(ssCls);
+                Class<? extends IStorageService> cls = Osgl.classForName(ssCls);
                 ssMap.put(s, cls);
                 ssConfs.put(s, ssConf);
             }
