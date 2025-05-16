@@ -1,4 +1,5 @@
 # History
+# 1.8.0   - Support for Play 1.8.0
 # 1.7     - Support for Mongo 7.0
 #         - dependencies updates
 #         - mongo-java-driver 4.11.1
@@ -53,9 +54,9 @@
 #        - trim value when processing where statement in Factory.fetch
 # 1.2.5 - mavenize project
 # 1.2.4d - Add BlobGsonAdapter and ModelFactoryGsonAdapter utilities
-self: play -> morphia 1.7.1
+self: play -> morphia 1.8.0
 require:
-    - play 1.4.4
+    - play 1.8.0
     - org.mongodb -> mongo-java-driver 3.12.14
     - org.mongodb.morphia -> morphia 1.3.2
     - org.osgl -> osgl-tool 0.3-SNAPSHOT

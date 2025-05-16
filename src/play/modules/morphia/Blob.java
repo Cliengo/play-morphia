@@ -1,7 +1,7 @@
 package play.modules.morphia;
 
 import org.bson.types.ObjectId;
-import org.osgl._;
+import org.osgl.Osgl;
 import org.osgl.exception.UnexpectedIOException;
 import org.osgl.storage.ISObject;
 import org.osgl.storage.IStorageService;
@@ -110,7 +110,7 @@ public class Blob implements BinaryField, Serializable {
         }
 
         @Override
-        public void consumeOnce(_.Function<InputStream, ?> consumer) throws UnexpectedIOException {
+        public void consumeOnce(Osgl.Function<InputStream, ?> consumer) throws UnexpectedIOException {
             sobj.consumeOnce(consumer);
         }
     }

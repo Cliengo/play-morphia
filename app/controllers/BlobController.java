@@ -3,7 +3,7 @@ package controllers;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.mongodb.morphia.Datastore;
-import org.osgl._;
+import org.osgl.Osgl;
 import org.osgl.storage.ISObject;
 import org.osgl.storage.KeyGenerator;
 import org.osgl.util.S;
@@ -87,7 +87,7 @@ public class BlobController extends Controller {
                     }
                     Logger.info("migrating %s of %s: %s...", i++, len, s);
                     final String key = s;
-                    ss.migrate(key, new _.F1<Throwable, Void>() {
+                    ss.migrate(key, new Osgl.F1<Throwable, Void>() {
                         @Override
                         public Void apply(Throwable o) {
                             errs.incrementAndGet();

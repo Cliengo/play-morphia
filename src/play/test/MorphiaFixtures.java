@@ -77,7 +77,7 @@ public class MorphiaFixtures extends Fixtures {
 
             String renderedYaml = TemplateLoader.load(yamlFile).render();
 
-            Yaml yaml = new Yaml(new CustomClassLoaderConstructor(Play.classloader));
+            Yaml yaml = new Yaml(new CustomClassLoaderConstructor(Play.classloader, null));
             Object o = yaml.load(renderedYaml);
             if (o instanceof LinkedHashMap<?, ?>) {
                 @SuppressWarnings("unchecked") LinkedHashMap<Object, Map<?, ?>> objects = (LinkedHashMap<Object, Map<?, ?>>) o;
