@@ -53,11 +53,21 @@
 #        - trim value when processing where statement in Factory.fetch
 # 1.2.5 - mavenize project
 # 1.2.4d - Add BlobGsonAdapter and ModelFactoryGsonAdapter utilities
-self: play -> morphia 1.7.1
+self: play -> morphia 1.7.2
 require:
-    - play 1.4.4
-    - org.mongodb -> mongo-java-driver 3.12.14
-    - org.mongodb.morphia -> morphia 1.3.2
+    - play 1.4.5
+    
+    # Morphia necesita un driver, pero no queremos que lo descargue él.
+    - org.mongodb.morphia -> morphia 1.3.2:
+        exclude:
+            - org.mongodb -> mongo-java-driver
+            
+    # Definimos el driver explícitamente y excluimos la librería BSON
+    # que trae transitivamente para evitar duplicados.
+    - org.mongodb -> mongo-java-driver 3.12.14:
+        exclude:
+            - org.mongodb -> bson
+        
     - org.osgl -> osgl-tool 0.3-SNAPSHOT
     - org.osgl -> osgl-logging 0.3-SNAPSHOT
     - org.osgl -> osgl-storage 0.3-SNAPSHOT
