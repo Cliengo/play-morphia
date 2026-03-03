@@ -51,6 +51,7 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MapReduceCommand;
+import com.mongodb.ReadPreference;
 import com.mongodb.MapReduceOutput;
 import com.mongodb.WriteConcern;
 import com.mongodb.WriteResult;
@@ -690,6 +691,7 @@ public class Model implements Serializable, play.db.Model {
     
     private void deleteLegacyBlobs() {
         GridFS gfs = MorphiaPlugin.gridFs();
+        if (gfs == null) return;
         Pattern ptn = Pattern.compile(getIdAsStr());
         gfs.remove(new BasicDBObject("name", ptn));
     }
@@ -1556,6 +1558,22 @@ public class Model implements Serializable, play.db.Model {
          */
         public <T> MorphiaQuery from(int position) {
             q_.offset(position);
+            return this;
+        }
+
+        /**
+         * Route this query to MongoDB secondary nodes.
+         * Use for read-heavy or statistical queries to reduce load on the primary.
+         * Falls back to primary when no secondary is available (secondaryPreferred)
+         * or throws when unavailable (secondary).
+         *
+         * Example:
+         *   long total = Contact.q("company", id)
+         *       .useReadPreference(ReadPreference.secondaryPreferred())
+         *       .count();
+         */
+        public MorphiaQuery useReadPreference(ReadPreference rp) {
+            q_ = q_.useReadPreference(rp);
             return this;
         }
 

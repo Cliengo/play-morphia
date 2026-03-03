@@ -19,9 +19,10 @@ public class UserTest extends UnitTest {
     @Before
     public void setup() throws FileNotFoundException {
         User.deleteAll();
-        MorphiaPlugin.ds().getDB().getCollection(MorphiaPlugin.gridFs().getBucketName() + ".files").drop();
-        MorphiaPlugin.ds().getDB().getCollection(MorphiaPlugin.gridFs().getBucketName() + ".chunks").drop();
-
+        if (MorphiaPlugin.gridFs() != null) {
+            MorphiaPlugin.ds().getDB().getCollection(MorphiaPlugin.gridFs().getBucketName() + ".files").drop();
+            MorphiaPlugin.ds().getDB().getCollection(MorphiaPlugin.gridFs().getBucketName() + ".chunks").drop();
+        }
         blob = newBlob();
     }
     

@@ -10,6 +10,7 @@ import play.test.UnitTest;
 
 import java.io.File;
 import java.util.List;
+import org.junit.Assume;
 
 
 public class Bug44 extends UnitTest {
@@ -25,6 +26,8 @@ public class Bug44 extends UnitTest {
     
     @Test
     public void test() {
+        Assume.assumeNotNull("GridFS is disabled (morphia.gridfs.enabled=false) — skipping blob test",
+                MorphiaPlugin.gridFs());
         User user = new User();
         user.name = "alex";
         user.photo = newBlob("test/googlelogo.png");
