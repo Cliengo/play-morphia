@@ -12,6 +12,7 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 import org.bson.types.ObjectId;
@@ -121,6 +122,8 @@ public final class MorphiaPlugin extends PlayPlugin {
     private static boolean configured_ = false;
 
     private static boolean appStarted_ = false;
+
+    private static final AtomicBoolean reconnecting_ = new AtomicBoolean(false);
 
     private static boolean loggerRegistered_ = false;
 
@@ -474,6 +477,9 @@ public final class MorphiaPlugin extends PlayPlugin {
 
     private void configureConnection_() {
         Properties c = Play.configuration;
+        if (mongo_ != null) {
+            try { mongo_.close(); } catch (Exception ignored) {}
+        }
         MongoClientOptions options = readMongoOptions(c);
 
         String url = c.getProperty(PREFIX + "url");
@@ -496,6 +502,7 @@ public final class MorphiaPlugin extends PlayPlugin {
            String port = c.getProperty(PREFIX + "port", "27017");
            mongo_ = connect_(host, port, options, credential_);
         }
+        dataStores_.clear();
      }
 
     private static MongoClientOptions readMongoOptions(Properties c) {
@@ -786,12 +793,17 @@ public final class MorphiaPlugin extends PlayPlugin {
 
     @Override
     public void onInvocationException(Throwable e) {
-        if (e instanceof MongoException) {
-           error("MongoException.Network encountered. Trying to restart mongo...");
-           configureConnection_();
-           initMorphia_();
+        if ((e instanceof MongoSocketException || e instanceof MongoTimeoutException)
+                && reconnecting_.compareAndSet(false, true)) {
+            try {
+                error("MongoException.Network encountered. Trying to restart mongo...");
+                configureConnection_();
+                initMorphia_();
+            } finally {
+                reconnecting_.set(false);
+            }
         }
-     }
+    }
 
     private void configureDs_() {
 //        List<Class<?>> pending = new ArrayList<Class<?>>();

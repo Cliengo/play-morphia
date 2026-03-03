@@ -690,6 +690,7 @@ public class Model implements Serializable, play.db.Model {
     
     private void deleteLegacyBlobs() {
         GridFS gfs = MorphiaPlugin.gridFs();
+        if (gfs == null) return;
         Pattern ptn = Pattern.compile(getIdAsStr());
         gfs.remove(new BasicDBObject("name", ptn));
     }

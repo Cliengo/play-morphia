@@ -57,6 +57,7 @@ public class GridFSStorageService extends StorageServiceBase implements IStorage
     @Override
     public void put(String key, ISObject stuff) throws UnexpectedIOException {
         GridFS gfs = gfs();
+        if (gfs == null) return;
         gfs.remove(new BasicDBObject("name", key));
         GridFSInputFile inputFile = gfs.createFile(stuff.asByteArray());
         inputFile.setContentType(stuff.getAttribute(Blob.CONTENT_TYPE));
@@ -67,7 +68,9 @@ public class GridFSStorageService extends StorageServiceBase implements IStorage
 
     @Override
     public void remove(String key) {
-        gfs().remove(new BasicDBObject("name", key));
+        GridFS gfs = gfs();
+        if (gfs == null) return;
+        gfs.remove(new BasicDBObject("name", key));
         // the following line is to make sure the old blob data get removed
         // the line will be removed in the next release
         BlobStorageService.removeLater(BlobStorageService.getLegacyKey(key), this);
@@ -85,8 +88,10 @@ public class GridFSStorageService extends StorageServiceBase implements IStorage
     }
 
     private static GridFSDBFile findFile(String key) {
+        GridFS gfs = gfs();
+        if (gfs == null) return null;
         DBObject queryObj = new BasicDBObject("name", key);
-        return gfs().findOne(queryObj);
+        return gfs.findOne(queryObj);
     }
     
     private static GridFS gfs() {
