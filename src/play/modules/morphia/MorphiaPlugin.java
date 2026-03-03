@@ -574,8 +574,10 @@ public final class MorphiaPlugin extends PlayPlugin {
         ds_ = morphia_.createDatastore(mongo_, dbName);
         dataStores_.put(dbName, ds_);
 
-        String uploadCollection = c.getProperty("morphia.collection.upload", "uploads");
-        gridfs = new GridFS(MorphiaPlugin.ds().getDB(), uploadCollection);
+        if (!"false".equals(c.getProperty("morphia.gridfs.enabled", "true"))) {
+            String uploadCollection = c.getProperty("morphia.collection.upload", "uploads");
+            gridfs = new GridFS(MorphiaPlugin.ds().getDB(), uploadCollection);
+        }
 
         morphia_.getMapper().addInterceptor(new AbstractEntityInterceptor() {
            @Override
@@ -828,8 +830,10 @@ public final class MorphiaPlugin extends PlayPlugin {
 //            }
 //        }
 
-        mongo_.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
-        ds().ensureIndexes();
+        if (!"false".equals(Play.configuration.getProperty("morphia.ensureIndexes", "true"))) {
+            mongo_.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
+            ds().ensureIndexes();
+        }
 
         String writeConcern = Play.configuration.getProperty(
                 "morphia.defaultWriteConcern", "safe");
