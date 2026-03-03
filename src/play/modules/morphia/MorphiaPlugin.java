@@ -112,7 +112,7 @@ public final class MorphiaPlugin extends PlayPlugin {
     /**
      * Reads a boolean property, consistent with how Play's Boolean.parseBoolean() works elsewhere
      * in this class. Absent keys return {@code defaultValue}; "true" (case-insensitive) is the
-     * only value that evaluates to {@code true} — all other non-null strings (including "false",
+     * only value that evaluates to {@code true} - all other non-null strings (including "false",
      * "no", "0") evaluate to {@code false}.
      */
     static boolean getBooleanProperty(Properties props, String key, boolean defaultValue) {
