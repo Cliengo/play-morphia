@@ -52,7 +52,7 @@ import play.modules.morphia.utils.SilentLoggerFactory;
  */
 public final class MorphiaPlugin extends PlayPlugin {
 
-    public static final String VERSION = "1.5.1";
+    public static final String VERSION = "1.7.3";
 
     public static void info(String msg, Object... args) {
         Logger.info(msg_(msg, args));
