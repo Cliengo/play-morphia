@@ -525,6 +525,8 @@ public final class MorphiaPlugin extends PlayPlugin {
                  method.invoke(builder, Double.parseDouble(property));
               else if (fieldType == boolean.class)
                  method.invoke(builder, Boolean.parseBoolean(property));
+              else if (fieldType == ReadPreference.class)
+                 method.invoke(builder, ReadPreference.valueOf(property));
            } catch (Exception e) {
               error(e, "error setting mongo option " + method.getName());
            }

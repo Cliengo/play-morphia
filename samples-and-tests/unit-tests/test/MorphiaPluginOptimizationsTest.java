@@ -3,6 +3,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.MongoException;
 import com.mongodb.MongoSocketException;
 import com.mongodb.MongoTimeoutException;
+import com.mongodb.ReadPreference;
 import com.mongodb.ServerAddress;
 import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentMap;
@@ -123,6 +124,38 @@ public class MorphiaPluginOptimizationsTest extends UnitTest {
 
         assertFalse("Secondary datastore must be evicted from cache after reconnect",
                 map.containsKey("test_secondary_db_opt"));
+    }
+
+    /**
+     * Verifies that morphia.driver.readPreference config sets ReadPreference on the MongoClient.
+     * The test conf sets readPreference=secondaryPreferred, so we verify the client reflects it.
+     * On standalone MongoDB, secondaryPreferred falls back to primary — no test breakage.
+     */
+    @Test
+    public void testReadPreferenceSetFromDriverConfig() {
+        ReadPreference rp = MorphiaPlugin.ds().getMongo().getMongoClientOptions().getReadPreference();
+        assertNotNull("ReadPreference must be set from morphia.driver.readPreference config", rp);
+        assertEquals("ReadPreference name must match config value",
+                "secondaryPreferred", rp.getName());
+    }
+
+    /**
+     * Verifies that useReadPreference() on MorphiaQuery routes the query correctly.
+     * On standalone MongoDB, secondaryPreferred still reads from primary — but the
+     * method must execute without error and return a valid result.
+     */
+    @Test
+    public void testPerQueryReadPreferenceExecutesSuccessfully() {
+        Account a = new Account("rp-test", "rp@test.com");
+        a.save();
+        try {
+            long count = Account.q()
+                    .useReadPreference(ReadPreference.secondaryPreferred())
+                    .count();
+            assertTrue("Query with secondaryPreferred must return a non-negative count", count >= 1);
+        } finally {
+            Account.q("login", "rp-test").delete();
+        }
     }
 
     /**
