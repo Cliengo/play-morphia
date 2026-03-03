@@ -109,6 +109,17 @@ public final class MorphiaPlugin extends PlayPlugin {
 
     public static final String PREFIX = "morphia.db.";
 
+    /**
+     * Reads a boolean property, consistent with how Play's Boolean.parseBoolean() works elsewhere
+     * in this class. Absent keys return {@code defaultValue}; "true" (case-insensitive) is the
+     * only value that evaluates to {@code true} — all other non-null strings (including "false",
+     * "no", "0") evaluate to {@code false}.
+     */
+    static boolean getBooleanProperty(Properties props, String key, boolean defaultValue) {
+        String value = props.getProperty(key);
+        return value == null ? defaultValue : Boolean.parseBoolean(value);
+    }
+
     private final MorphiaEnhancer e_ = new MorphiaEnhancer();
     
     private static MongoCredential credential_ = null;
@@ -583,7 +594,7 @@ public final class MorphiaPlugin extends PlayPlugin {
         ds_ = morphia_.createDatastore(mongo_, dbName);
         dataStores_.put(dbName, ds_);
 
-        if (!"false".equals(c.getProperty("morphia.gridfs.enabled", "true"))) {
+        if (getBooleanProperty(c, "morphia.gridfs.enabled", true)) {
             String uploadCollection = c.getProperty("morphia.collection.upload", "uploads");
             gridfs = new GridFS(MorphiaPlugin.ds().getDB(), uploadCollection);
         }
@@ -844,7 +855,7 @@ public final class MorphiaPlugin extends PlayPlugin {
 //            }
 //        }
 
-        if (!"false".equals(Play.configuration.getProperty("morphia.ensureIndexes", "true"))) {
+        if (getBooleanProperty(Play.configuration, "morphia.ensureIndexes", true)) {
             mongo_.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
             ds().ensureIndexes();
         }
