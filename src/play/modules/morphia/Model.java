@@ -927,21 +927,35 @@ public class Model implements Serializable, play.db.Model {
 
         // Process each field individually to avoid comma-split bugs in Morphia's unset()
         // and to silently skip fields not present in Morphia's entity mapping.
-        MorphiaBatchUpdates<Model> batch = new MorphiaBatchUpdates<Model>(this);
+        MorphiaUpdateOperations ops = new MorphiaUpdateOperations(this.getClass());
         boolean hasOperations = false;
         for (int i = 0; i < notNullFieldNames.size(); i++) {
             try {
-                batch._set(notNullFieldNames.get(i), notNullFieldValues.get(i));
+                ops.set(notNullFieldNames.get(i), notNullFieldValues.get(i));
                 hasOperations = true;
             } catch (Exception ignored) {}
         }
         for (String nullField : nullFieldNames) {
             try {
-                batch._unset(nullField);
+                ops.unset(nullField);
                 hasOperations = true;
             } catch (Exception ignored) {}
         }
-        if (hasOperations) batch.commit();
+
+        // Apply the partial update. If no documents were matched (entity has pre-set id
+        // but was never inserted), fall back to a full replaceOne insert via ds().save().
+        boolean savedViaPartial = false;
+        if (hasOperations) {
+            UpdateResults result = ops.update(new MorphiaQuery(this.getClass()).filter("_id", getId()));
+            if (result != null && result.getUpdatedCount() > 0) {
+                savedViaPartial = true;
+            }
+        }
+        if (!savedViaPartial) {
+            // Document not found or no operations -- fall back to replaceOne
+            ds().save(this);
+            setSaved_();
+        }
 
         _h_Updated(this);
         return null; // Key unused by callers (save() ignores the return value)
