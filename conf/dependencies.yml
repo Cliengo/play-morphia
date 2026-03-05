@@ -1,4 +1,6 @@
 # History
+# 1.7.6   - Cliengo: fix save2() per-field processing to avoid ValidationException
+#           on unmapped fields and comma-split bug in unset()
 # 1.7.5   - Cliengo: fix lib/play-morphia.jar with patched save2()
 # 1.7.4   - Cliengo: patch save2() to use $set/$unset instead of replaceOne,
 #           preserving MongoDB fields not declared in Java (Node.js co-existence)
@@ -59,7 +61,7 @@
 #        - trim value when processing where statement in Factory.fetch
 # 1.2.5 - mavenize project
 # 1.2.4d - Add BlobGsonAdapter and ModelFactoryGsonAdapter utilities
-self: play -> morphia 1.7.5
+self: play -> morphia 1.7.6
 require:
     - play 1.4.5
     

@@ -900,7 +900,7 @@ public class Model implements Serializable, play.db.Model {
             // Fields present in MongoDB but NOT declared in Java (e.g. added by Node.js) are preserved.
             List<String> notNullFieldNames = new ArrayList<String>();
             List<Object> notNullFieldValues = new ArrayList<Object>();
-            StringBuilder nullFieldNames = new StringBuilder();
+            List<String> nullFieldNames = new ArrayList<String>();
 
             Class<?> clazz = this.getClass();
             while (clazz != null && !clazz.equals(Model.class)) {
@@ -917,20 +917,30 @@ public class Model implements Serializable, play.db.Model {
                             notNullFieldNames.add(f.getName());
                             notNullFieldValues.add(val);
                         } else {
-                            if (nullFieldNames.length() > 0) nullFieldNames.append(",");
-                            nullFieldNames.append(f.getName());
+                            nullFieldNames.add(f.getName());
                         }
                     } catch (IllegalAccessException ignored) {}
                 }
                 clazz = clazz.getSuperclass();
             }
 
-            String nnf = String.join(",", notNullFieldNames);
-            String nf = nullFieldNames.toString();
+            // Process each field individually to avoid comma-split bugs in Morphia's unset()
+            // and to silently skip fields not present in Morphia's entity mapping.
             MorphiaBatchUpdates<Model> batch = new MorphiaBatchUpdates<Model>(this);
-            if (!nnf.isEmpty()) batch._set(nnf, notNullFieldValues.toArray());
-            if (!nf.isEmpty()) batch._unset(nf);
-            if (!nnf.isEmpty() || !nf.isEmpty()) batch.commit();
+            boolean hasOperations = false;
+            for (int i = 0; i < notNullFieldNames.size(); i++) {
+                try {
+                    batch._set(notNullFieldNames.get(i), notNullFieldValues.get(i));
+                    hasOperations = true;
+                } catch (Exception ignored) {}
+            }
+            for (String nullField : nullFieldNames) {
+                try {
+                    batch._unset(nullField);
+                    hasOperations = true;
+                } catch (Exception ignored) {}
+            }
+            if (hasOperations) batch.commit();
 
             k = new Key<Model>(this.getClass(), ds().getCollection(this.getClass()).getName(), getId());
             _h_Updated(this);
