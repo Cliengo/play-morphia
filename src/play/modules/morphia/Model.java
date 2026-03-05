@@ -890,62 +890,61 @@ public class Model implements Serializable, play.db.Model {
         if (isNew) _h_OnAdd(); else _h_OnUpdate();
         saveBlobs();
 
-        Key<? extends Model> k;
         if (isNew) {
-            k = ds().save(this);
+            Key<? extends Model> k = ds().save(this);
             setSaved_();
             _h_Added();
-        } else {
-            // UPDATE: enumerate all Java-declared fields via reflection and apply $set/$unset.
-            // Fields present in MongoDB but NOT declared in Java (e.g. added by Node.js) are preserved.
-            List<String> notNullFieldNames = new ArrayList<String>();
-            List<Object> notNullFieldValues = new ArrayList<Object>();
-            List<String> nullFieldNames = new ArrayList<String>();
-
-            Class<?> clazz = this.getClass();
-            while (clazz != null && !clazz.equals(Model.class)) {
-                for (Field f : clazz.getDeclaredFields()) {
-                    int mod = f.getModifiers();
-                    if (java.lang.reflect.Modifier.isStatic(mod)) continue;
-                    if (java.lang.reflect.Modifier.isTransient(mod)) continue;
-                    if (f.isSynthetic()) continue;
-                    if (f.isAnnotationPresent(Transient.class)) continue;
-                    f.setAccessible(true);
-                    try {
-                        Object val = f.get(this);
-                        if (val != null) {
-                            notNullFieldNames.add(f.getName());
-                            notNullFieldValues.add(val);
-                        } else {
-                            nullFieldNames.add(f.getName());
-                        }
-                    } catch (IllegalAccessException ignored) {}
-                }
-                clazz = clazz.getSuperclass();
-            }
-
-            // Process each field individually to avoid comma-split bugs in Morphia's unset()
-            // and to silently skip fields not present in Morphia's entity mapping.
-            MorphiaBatchUpdates<Model> batch = new MorphiaBatchUpdates<Model>(this);
-            boolean hasOperations = false;
-            for (int i = 0; i < notNullFieldNames.size(); i++) {
-                try {
-                    batch._set(notNullFieldNames.get(i), notNullFieldValues.get(i));
-                    hasOperations = true;
-                } catch (Exception ignored) {}
-            }
-            for (String nullField : nullFieldNames) {
-                try {
-                    batch._unset(nullField);
-                    hasOperations = true;
-                } catch (Exception ignored) {}
-            }
-            if (hasOperations) batch.commit();
-
-            k = new Key<Model>(this.getClass(), ds().getCollection(this.getClass()).getName(), getId());
-            _h_Updated(this);
+            return k;
         }
-        return k;
+
+        // UPDATE: enumerate all Java-declared fields via reflection and apply $set/$unset.
+        // Fields present in MongoDB but NOT declared in Java (e.g. added by Node.js) are preserved.
+        List<String> notNullFieldNames = new ArrayList<String>();
+        List<Object> notNullFieldValues = new ArrayList<Object>();
+        List<String> nullFieldNames = new ArrayList<String>();
+
+        Class<?> clazz = this.getClass();
+        while (clazz != null && !clazz.equals(Model.class)) {
+            for (Field f : clazz.getDeclaredFields()) {
+                int mod = f.getModifiers();
+                if (java.lang.reflect.Modifier.isStatic(mod)) continue;
+                if (java.lang.reflect.Modifier.isTransient(mod)) continue;
+                if (f.isSynthetic()) continue;
+                if (f.isAnnotationPresent(Transient.class)) continue;
+                f.setAccessible(true);
+                try {
+                    Object val = f.get(this);
+                    if (val != null) {
+                        notNullFieldNames.add(f.getName());
+                        notNullFieldValues.add(val);
+                    } else {
+                        nullFieldNames.add(f.getName());
+                    }
+                } catch (IllegalAccessException ignored) {}
+            }
+            clazz = clazz.getSuperclass();
+        }
+
+        // Process each field individually to avoid comma-split bugs in Morphia's unset()
+        // and to silently skip fields not present in Morphia's entity mapping.
+        MorphiaBatchUpdates<Model> batch = new MorphiaBatchUpdates<Model>(this);
+        boolean hasOperations = false;
+        for (int i = 0; i < notNullFieldNames.size(); i++) {
+            try {
+                batch._set(notNullFieldNames.get(i), notNullFieldValues.get(i));
+                hasOperations = true;
+            } catch (Exception ignored) {}
+        }
+        for (String nullField : nullFieldNames) {
+            try {
+                batch._unset(nullField);
+                hasOperations = true;
+            } catch (Exception ignored) {}
+        }
+        if (hasOperations) batch.commit();
+
+        _h_Updated(this);
+        return null; // Key unused by callers (save() ignores the return value)
     }
 
     public static <T extends Model> WriteResult insert(T entity) {

@@ -1,4 +1,6 @@
 # History
+# 1.7.7   - Cliengo: fix save2() ClassCastException by removing manual Key construction;
+#           return null for update path (Key is unused by callers)
 # 1.7.6   - Cliengo: fix save2() per-field processing to avoid ValidationException
 #           on unmapped fields and comma-split bug in unset()
 # 1.7.5   - Cliengo: fix lib/play-morphia.jar with patched save2()
@@ -61,7 +63,7 @@
 #        - trim value when processing where statement in Factory.fetch
 # 1.2.5 - mavenize project
 # 1.2.4d - Add BlobGsonAdapter and ModelFactoryGsonAdapter utilities
-self: play -> morphia 1.7.6
+self: play -> morphia 1.7.7
 require:
     - play 1.4.5
     
