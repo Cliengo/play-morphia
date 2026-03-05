@@ -12,6 +12,7 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 import org.bson.types.ObjectId;
@@ -108,6 +109,17 @@ public final class MorphiaPlugin extends PlayPlugin {
 
     public static final String PREFIX = "morphia.db.";
 
+    /**
+     * Reads a boolean property, consistent with how Play's Boolean.parseBoolean() works elsewhere
+     * in this class. Absent keys return {@code defaultValue}; "true" (case-insensitive) is the
+     * only value that evaluates to {@code true} — all other non-null strings (including "false",
+     * "no", "0") evaluate to {@code false}.
+     */
+    static boolean getBooleanProperty(Properties props, String key, boolean defaultValue) {
+        String value = props.getProperty(key);
+        return value == null ? defaultValue : Boolean.parseBoolean(value);
+    }
+
     private final MorphiaEnhancer e_ = new MorphiaEnhancer();
     
     private static MongoCredential credential_ = null;
@@ -121,6 +133,8 @@ public final class MorphiaPlugin extends PlayPlugin {
     private static boolean configured_ = false;
 
     private static boolean appStarted_ = false;
+
+    private static final AtomicBoolean reconnecting_ = new AtomicBoolean(false);
 
     private static boolean loggerRegistered_ = false;
 
@@ -474,6 +488,9 @@ public final class MorphiaPlugin extends PlayPlugin {
 
     private void configureConnection_() {
         Properties c = Play.configuration;
+        if (mongo_ != null) {
+            try { mongo_.close(); } catch (Exception ignored) {}
+        }
         MongoClientOptions options = readMongoOptions(c);
 
         String url = c.getProperty(PREFIX + "url");
@@ -496,6 +513,7 @@ public final class MorphiaPlugin extends PlayPlugin {
            String port = c.getProperty(PREFIX + "port", "27017");
            mongo_ = connect_(host, port, options, credential_);
         }
+        dataStores_.clear();
      }
 
     private static MongoClientOptions readMongoOptions(Properties c) {
@@ -518,6 +536,8 @@ public final class MorphiaPlugin extends PlayPlugin {
                  method.invoke(builder, Double.parseDouble(property));
               else if (fieldType == boolean.class)
                  method.invoke(builder, Boolean.parseBoolean(property));
+              else if (fieldType == ReadPreference.class)
+                 method.invoke(builder, ReadPreference.valueOf(property));
            } catch (Exception e) {
               error(e, "error setting mongo option " + method.getName());
            }
@@ -574,8 +594,10 @@ public final class MorphiaPlugin extends PlayPlugin {
         ds_ = morphia_.createDatastore(mongo_, dbName);
         dataStores_.put(dbName, ds_);
 
-        String uploadCollection = c.getProperty("morphia.collection.upload", "uploads");
-        gridfs = new GridFS(MorphiaPlugin.ds().getDB(), uploadCollection);
+        if (getBooleanProperty(c, "morphia.gridfs.enabled", true)) {
+            String uploadCollection = c.getProperty("morphia.collection.upload", "uploads");
+            gridfs = new GridFS(MorphiaPlugin.ds().getDB(), uploadCollection);
+        }
 
         morphia_.getMapper().addInterceptor(new AbstractEntityInterceptor() {
            @Override
@@ -784,12 +806,17 @@ public final class MorphiaPlugin extends PlayPlugin {
 
     @Override
     public void onInvocationException(Throwable e) {
-        if (e instanceof MongoException) {
-           error("MongoException.Network encountered. Trying to restart mongo...");
-           configureConnection_();
-           initMorphia_();
+        if ((e instanceof MongoSocketException || e instanceof MongoTimeoutException)
+                && reconnecting_.compareAndSet(false, true)) {
+            try {
+                error("MongoException.Network encountered. Trying to restart mongo...");
+                configureConnection_();
+                initMorphia_();
+            } finally {
+                reconnecting_.set(false);
+            }
         }
-     }
+    }
 
     private void configureDs_() {
 //        List<Class<?>> pending = new ArrayList<Class<?>>();
@@ -828,8 +855,10 @@ public final class MorphiaPlugin extends PlayPlugin {
 //            }
 //        }
 
-        mongo_.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
-        ds().ensureIndexes();
+        if (getBooleanProperty(Play.configuration, "morphia.ensureIndexes", true)) {
+            mongo_.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
+            ds().ensureIndexes();
+        }
 
         String writeConcern = Play.configuration.getProperty(
                 "morphia.defaultWriteConcern", "safe");
