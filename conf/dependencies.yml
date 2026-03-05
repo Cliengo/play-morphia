@@ -1,4 +1,6 @@
 # History
+# 1.7.4   - Cliengo: patch save2() to use $set/$unset instead of replaceOne,
+#           preserving MongoDB fields not declared in Java (Node.js co-existence)
 # 1.7.3   - Cliengo: disable GridFS/ensureIndexes on startup, reconnect mutex,
 #           exception filtering (Socket/Timeout only), ReadPreference support,
 #           getBooleanProperty helper, null guards for gridfs=false
@@ -56,7 +58,7 @@
 #        - trim value when processing where statement in Factory.fetch
 # 1.2.5 - mavenize project
 # 1.2.4d - Add BlobGsonAdapter and ModelFactoryGsonAdapter utilities
-self: play -> morphia 1.7.3
+self: play -> morphia 1.7.4
 require:
     - play 1.4.5
     
