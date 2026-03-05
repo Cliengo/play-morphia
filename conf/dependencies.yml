@@ -1,4 +1,6 @@
 # History
+# 1.7.8   - Cliengo: fix getIdAsStr() ClassCastException due to javac picking
+#           String.valueOf(char[]) over String.valueOf(Object) for generic getId()
 # 1.7.7   - Cliengo: fix save2() ClassCastException by removing manual Key construction;
 #           return null for update path (Key is unused by callers)
 # 1.7.6   - Cliengo: fix save2() per-field processing to avoid ValidationException
@@ -63,7 +65,7 @@
 #        - trim value when processing where statement in Factory.fetch
 # 1.2.5 - mavenize project
 # 1.2.4d - Add BlobGsonAdapter and ModelFactoryGsonAdapter utilities
-self: play -> morphia 1.7.7
+self: play -> morphia 1.7.8
 require:
     - play 1.4.5
     
